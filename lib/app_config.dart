@@ -11,7 +11,7 @@ class AppConfig {
       final jsonString = await rootBundle.loadString(CONFIG_PATH);
       _config = json.decode(jsonString) as Map<String, dynamic>;
     } catch (e) {
-      print("Error loading app_settings.json");
+      print("Error loading app_settings.json: $e");
     }
   }
 

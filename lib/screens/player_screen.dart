@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:song_playa/services/song_server.dart';
 
 class MusicPlayerScreen extends StatefulWidget {
   const MusicPlayerScreen({super.key});
@@ -41,11 +43,14 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final songServer = context.read<SongServer>();
+
     return Scaffold(
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            IconButton(iconSize: 48, icon: const Icon(Icons.download), onPressed: songServer.GetAllSongNames),
             // Song Name Label
             Padding(
               padding: const EdgeInsets.all(16.0),
