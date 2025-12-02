@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:song_playa/app_config.dart';
-import 'package:song_playa/core/api_client.dart';
+import 'package:song_playa/api/api_client.dart';
 import 'package:song_playa/screens/player_screen.dart';
 import 'package:song_playa/services/audio_playback_service.dart';
 import 'package:song_playa/services/song_server.dart';

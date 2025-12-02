@@ -1,4 +1,4 @@
-import 'package:song_playa/core/api_client.dart';
+import 'package:song_playa/api/api_client.dart';
 
 class SongServer {
   final ApiClient _apiClient;
