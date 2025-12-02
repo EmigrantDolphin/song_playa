@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:song_playa/app_config.dart';
+import 'package:song_playa/core/api_client.dart';
 import 'package:song_playa/screens/player_screen.dart';
 import 'package:song_playa/services/song_server.dart';
+import 'package:song_playa/services/song_storage_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,9 +16,14 @@ Future<void> main() async {
     MultiProvider(
       providers: [
         Provider<AppConfig>(create: (_) => config),
-        ProxyProvider<AppConfig, SongServer>(
-          update: (context, config, previous) =>
-              SongServer(serverUrl: config.getServerUrl()),
+        Provider<ApiClient>(
+          create: (context) => ApiClient(config.getServerUrl()),
+        ),
+        ProxyProvider<ApiClient, SongServer>(
+          update: (_, apiClient, _) => SongServer(apiClient: apiClient),
+        ),
+        ProxyProvider<ApiClient, SongStorageService>(
+          update: (_, apiClient, _) => SongStorageService(apiClient: apiClient),
         ),
       ],
       child: const MyApp(),

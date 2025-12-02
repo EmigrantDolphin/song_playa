@@ -1,10 +1,13 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:song_playa/core/api_client.dart';
 
 class SongStorageService {
-  final Dio _dio = Dio();
   final String _songsDirectory = 'downloaded_songs';
+  final ApiClient _apiClient;
+
+  SongStorageService({required ApiClient apiClient}) : _apiClient = apiClient;
 
   Future<String> _getLocalPath() async {
     final directory = await getApplicationDocumentsDirectory();
@@ -18,7 +21,6 @@ class SongStorageService {
   }
 
   Future<String?> downloadSong({
-    required String url,
     required String fileName,
     Function(int received, int total)? onReceiveProgress,
   }) async {
@@ -26,7 +28,7 @@ class SongStorageService {
       final localPath = await _getLocalPath();
       final filePath = '$localPath/$fileName';
 
-      await _dio.download(url, filePath, onReceiveProgress: onReceiveProgress);
+      await _apiClient.dio.download("download/song/$fileName", filePath, onReceiveProgress: onReceiveProgress);
 
       return filePath;
     } catch (e) {
