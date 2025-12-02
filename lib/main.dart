@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:song_playa/app_config.dart';
 import 'package:song_playa/core/api_client.dart';
 import 'package:song_playa/screens/player_screen.dart';
+import 'package:song_playa/services/audio_playback_service.dart';
 import 'package:song_playa/services/song_server.dart';
 import 'package:song_playa/services/song_storage_service.dart';
 
@@ -24,6 +25,10 @@ Future<void> main() async {
         ),
         ProxyProvider<ApiClient, SongStorageService>(
           update: (_, apiClient, _) => SongStorageService(apiClient: apiClient),
+        ),
+        Provider<AudioPlaybackService>(
+          create: (_) => AudioPlaybackService(),
+          dispose: (_, service) => service.dispose(),
         ),
       ],
       child: const MyApp(),

@@ -1,7 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:song_playa/services/audio_playback_service.dart';
 import 'package:song_playa/services/song_server.dart';
 import 'package:song_playa/services/song_storage_service.dart';
+import 'package:path/path.dart' as p;
 
 class MusicPlayerScreen extends StatefulWidget {
   const MusicPlayerScreen({super.key});
@@ -13,9 +16,10 @@ class MusicPlayerScreen extends StatefulWidget {
 class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
   late final SongServer _songServer;
   late final SongStorageService _songStorage;
+  late final AudioPlaybackService _audioPlayer;
   var _isPlaying = false;
-  var _currentSongIndex = 0;
-  var _songs = ["song one", "song two", "song three"];
+  var _loadedSongFiles = <File>[];
+  var _currentSongName = "Nothing";
 
   var _songsToDownload = <String>[];
 
@@ -24,14 +28,18 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
     super.initState();
     _songServer = context.read<SongServer>();
     _songStorage = context.read<SongStorageService>();
+    _audioPlayer = context.read<AudioPlaybackService>();
   }
 
   Future<void> _startDownloadingSong() async {
     var songNames = await _songServer.getAllSongNames();
-    setState(() {
-      _songsToDownload = songNames;
-    });
+    var previousLocalSongs = await _songStorage.listLocalSongs();
+    var previousLocalSongNames = previousLocalSongs.map((x) => p.basename(x.path));
+    var newSongs = songNames.where((x) => !previousLocalSongNames.contains(x)).toList();
 
+    setState(() {
+      _songsToDownload = newSongs;
+    });
 
     while (_songsToDownload.isNotEmpty) {
       var songName = _songsToDownload.last;
@@ -46,34 +54,47 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
 
     var files = await _songStorage.listLocalSongs();
     print("local files: ${files.map((x) => x.path).toList()}");
-
+    setState(() {
+      _loadedSongFiles = files;
+    });
   }
 
-  // Empty logic functions as requested
   void _togglePlayStop() {
-    setState(() {
-      _isPlaying = !_isPlaying;
-    });
+    if (_loadedSongFiles.isEmpty) return;
+
+    if (_isPlaying) {
+      _audioPlayer.stop();
+      setState(() {
+        _isPlaying = false;
+      });
+    } else {
+      // _audioPlayer.playSong(_loadedSongFiles[0]);
+      _audioPlayer.playMultipleSongs(_loadedSongFiles);
+      _audioPlayer.subscribeToIndexUpdates((index) {
+        if (index == null || index >= _loadedSongFiles.length) {
+          setState(() {
+            _isPlaying = false;
+          });
+          return;
+        }
+
+        var currentSong = _loadedSongFiles[index];
+        setState(() {
+          _currentSongName = p.basenameWithoutExtension(currentSong.path);
+        });
+      });
+      setState(() {
+        _isPlaying = true;
+      });
+    }
   }
 
   void _nextSong() {
-    setState(() {
-      if (_songs.length <= _currentSongIndex + 1) {
-        _currentSongIndex = 0;
-      } else {
-        _currentSongIndex += 1;
-      }
-    });
+    _audioPlayer.next();
   }
 
   void _previousSong() {
-    setState(() {
-      if (_currentSongIndex - 1 < 0) {
-        _currentSongIndex = _songs.length - 1;
-      } else {
-        _currentSongIndex -= 1;
-      }
-    });
+    _audioPlayer.previous();
   }
 
   @override
@@ -93,7 +114,7 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Text(
-                _songs[_currentSongIndex],
+                _currentSongName,
                 style: Theme.of(context).textTheme.headlineMedium,
                 textAlign: TextAlign.center,
               ),
