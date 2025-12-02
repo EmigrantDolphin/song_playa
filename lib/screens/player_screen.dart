@@ -52,15 +52,17 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
       print("running loop");
     }
 
-    var files = await _songStorage.listLocalSongs();
-    print("local files: ${files.map((x) => x.path).toList()}");
-    setState(() {
-      _loadedSongFiles = files;
-    });
   }
 
-  void _togglePlayStop() {
-    if (_loadedSongFiles.isEmpty) return;
+  Future<void> _togglePlayStop() async {
+    if (_loadedSongFiles.isEmpty) {
+      var files = await _songStorage.listLocalSongs();
+      setState(() {
+        _loadedSongFiles = files;
+      });
+
+      if (_loadedSongFiles.isEmpty) return;
+    }
 
     if (_isPlaying) {
       _audioPlayer.stop();
