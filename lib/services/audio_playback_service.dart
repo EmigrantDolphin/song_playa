@@ -20,6 +20,7 @@ class AudioPlaybackService {
     var audioSources = songFiles.map((x) => AudioSource.file(x.path)).toList();
     final playlist = ConcatenatingAudioSource(children: audioSources);
     try {
+      //TODO: separate setting audio source to a different method. RN every time you press play index resets to 0.
       await _player.setAudioSource(playlist);
       await _player.play();
     } catch (e) {

@@ -70,12 +70,11 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
     }
 
     if (_isPlaying) {
-      _audioPlayer.stop();
+      _audioPlayer.pause();
       setState(() {
         _isPlaying = false;
       });
     } else {
-      // _audioPlayer.playSong(_loadedSongFiles[0]);
       _audioPlayer.playMultipleSongs(_loadedSongFiles);
       _audioPlayer.subscribeToIndexUpdates((index) {
         if (index == null || index >= _loadedSongFiles.length) {
