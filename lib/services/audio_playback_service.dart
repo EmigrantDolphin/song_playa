@@ -31,6 +31,8 @@ class AudioPlaybackService {
   void stop() => _player.stop();
   void next() => _player.seekToNext();
   void previous() => _player.seekToPrevious();
+  void loopOneSong() => _player.setLoopMode(LoopMode.one);
+  void stopLooping() => _player.setLoopMode(LoopMode.off);
 
   void subscribeToIndexUpdates(void Function(int? index) callback) {
     if (_indexStreamSubscription != null) {

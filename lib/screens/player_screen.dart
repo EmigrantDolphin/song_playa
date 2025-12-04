@@ -18,6 +18,7 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
   late final SongStorageService _songStorage;
   late final AudioPlaybackService _audioPlayer;
   var _isPlaying = false;
+  var _isOneSongLooping = false;
   var _loadedSongFiles = <File>[];
   var _currentSongName = "Nothing";
 
@@ -34,8 +35,12 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
   Future<void> _startDownloadingSong() async {
     var songNames = await _songServer.getAllSongNames();
     var previousLocalSongs = await _songStorage.listLocalSongs();
-    var previousLocalSongNames = previousLocalSongs.map((x) => p.basename(x.path));
-    var newSongs = songNames.where((x) => !previousLocalSongNames.contains(x)).toList();
+    var previousLocalSongNames = previousLocalSongs.map(
+      (x) => p.basename(x.path),
+    );
+    var newSongs = songNames
+        .where((x) => !previousLocalSongNames.contains(x))
+        .toList();
 
     setState(() {
       _songsToDownload = newSongs;
@@ -51,7 +56,6 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
 
       print("running loop");
     }
-
   }
 
   Future<void> _togglePlayStop() async {
@@ -97,6 +101,18 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
 
   void _previousSong() {
     _audioPlayer.previous();
+  }
+
+  void _toggleOneSongLoop() {
+    if (_isOneSongLooping) {
+      _audioPlayer.stopLooping();
+    } else {
+      _audioPlayer.loopOneSong();
+    }
+
+    setState(() {
+      _isOneSongLooping = !_isOneSongLooping;
+    });
   }
 
   @override
@@ -148,6 +164,18 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
                   iconSize: 48,
                   icon: const Icon(Icons.skip_next),
                   onPressed: _nextSong,
+                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  iconSize: 48,
+                  icon: _isOneSongLooping
+                      ? const Icon(Icons.loop)
+                      : const Icon(Icons.loop, color: Color.fromRGBO(100, 200, 100, 1)),
+                  onPressed: _toggleOneSongLoop,
                 ),
               ],
             ),
