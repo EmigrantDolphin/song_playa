@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:song_playa/screens/widgets/music_controls_bar.dart';
 import 'package:song_playa/services/audio_playback_service.dart';
 import 'package:song_playa/services/song_server.dart';
 import 'package:song_playa/services/song_storage_service.dart';
@@ -20,7 +21,7 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
   var _isPlaying = false;
   var _isOneSongLooping = false;
   var _loadedSongFiles = <File>[];
-  var _currentSongName = "Nothing";
+  var _currentSongIndex = 0;
 
   var _songsToDownload = <String>[];
 
@@ -84,9 +85,8 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
           return;
         }
 
-        var currentSong = _loadedSongFiles[index];
         setState(() {
-          _currentSongName = p.basenameWithoutExtension(currentSong.path);
+          _currentSongIndex = index;
         });
       });
       setState(() {
@@ -95,12 +95,23 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
     }
   }
 
+  String _getLoadedSongName(int index) {
+    if (_loadedSongFiles.isEmpty) return "Nothing";
+    if (_loadedSongFiles.length < index) return "Nothing";
+
+    return p.basenameWithoutExtension(_loadedSongFiles[index].path);
+  }
+
   void _nextSong() {
     _audioPlayer.next();
   }
 
   void _previousSong() {
     _audioPlayer.previous();
+  }
+
+  void _seekSongAtIndex(int index) {
+    _audioPlayer.playSongAtIndex(index);
   }
 
   void _toggleOneSongLoop() {
@@ -119,68 +130,29 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text("Songs left to download: ${_songsToDownload.length}"),
-            IconButton(
-              iconSize: 48,
-              icon: const Icon(Icons.download),
-              onPressed: _startDownloadingSong,
-            ),
-            // Song Name Label
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                _currentSongName,
-                style: Theme.of(context).textTheme.headlineMedium,
-                textAlign: TextAlign.center,
+        child: ListView.builder(
+          itemCount: _loadedSongFiles.length,
+          itemBuilder: (context, index) {
+            return ListTile(
+              title: Text(
+                _getLoadedSongName(index)
               ),
-            ),
-
-            // Control Buttons
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Previous Button
-                IconButton(
-                  iconSize: 48,
-                  icon: const Icon(Icons.skip_previous),
-                  onPressed: _previousSong,
-                ),
-
-                // Play/Stop Button
-                IconButton(
-                  iconSize: 64,
-                  // Using play_arrow, could be swapped for Icons.stop or Icons.pause based on state later
-                  icon: !_isPlaying
-                      ? const Icon(Icons.play_arrow)
-                      : const Icon(Icons.pause),
-                  onPressed: _togglePlayStop,
-                ),
-
-                // Next Button
-                IconButton(
-                  iconSize: 48,
-                  icon: const Icon(Icons.skip_next),
-                  onPressed: _nextSong,
-                ),
-              ],
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  iconSize: 48,
-                  icon: _isOneSongLooping
-                      ? const Icon(Icons.loop)
-                      : const Icon(Icons.loop, color: Color.fromRGBO(100, 200, 100, 1)),
-                  onPressed: _toggleOneSongLoop,
-                ),
-              ],
-            ),
-          ],
+              tileColor: _isPlaying && _currentSongIndex == index ? Color.fromRGBO(20, 20, 120, 0.1) : null,
+              onTap: () => _seekSongAtIndex(index),
+            );
+          },
         ),
+      ),
+      bottomNavigationBar: MusicControlsBar(
+        onTogglePlayStop: _togglePlayStop,
+        onPreviousSong: _previousSong,
+        onNextSong: _nextSong,
+        onToggleOneSongLoop: _toggleOneSongLoop,
+        isPlaying: _isPlaying,
+        isOneSongLooping: _isOneSongLooping,
+        currentSongName: _getLoadedSongName(_currentSongIndex),
+        songsToDownload: _songsToDownload.length,
+        onStartDownloadingSong: _startDownloadingSong,
       ),
     );
   }

@@ -27,6 +27,14 @@ class AudioPlaybackService {
     }
   }
 
+  Future<void> playSongAtIndex(int index) async {
+    try {
+      await _player.seek(const Duration(seconds: 0), index: index);
+    } catch (e) {
+      print("Failed to switch song to index $index, error: $e");
+    }
+  }
+
   void pause() => _player.pause();
   void stop() => _player.stop();
   void next() => _player.seekToNext();
