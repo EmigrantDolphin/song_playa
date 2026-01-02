@@ -56,7 +56,7 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
       (x) => p.basename(x.path),
     );
     var newSongs = songNames
-        .where((x) => !previousLocalSongNames.contains(x))
+        .where((x) => !previousLocalSongNames.contains(x.name))
         .toList();
 
     setState(() {
