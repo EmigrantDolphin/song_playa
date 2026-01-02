@@ -7,28 +7,18 @@ class AudioPlaybackService {
   final _player = AudioPlayer();
   StreamSubscription<int?>? _indexStreamSubscription;
 
-  Future<void> playSong(File songFile) async {
-    try {
-      await _player.setFilePath(songFile.path);
-      await _player.play();
-    } catch (e) {
-      print("Error playing a song: $e");
-    }
-  }
-
-  Future<void> playMultipleSongs(List<File> songFiles) async {
+  Future<void> setSongs(List<File> songFiles) async {
     var audioSources = songFiles.map((x) => AudioSource.file(x.path)).toList();
     final playlist = ConcatenatingAudioSource(children: audioSources);
+
     try {
-      //TODO: separate setting audio source to a different method. RN every time you press play index resets to 0.
       await _player.setAudioSource(playlist);
-      await _player.play();
     } catch (e) {
       print("Error playing multiple songs: $e");
     }
   }
 
-  Future<void> playSongAtIndex(int index) async {
+  Future<void> seekSong(int index) async {
     try {
       await _player.seek(const Duration(seconds: 0), index: index);
     } catch (e) {
@@ -36,6 +26,7 @@ class AudioPlaybackService {
     }
   }
 
+  void play() => _player.play();
   void pause() => _player.pause();
   void stop() => _player.stop();
   void next() => _player.seekToNext();

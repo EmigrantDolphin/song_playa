@@ -31,6 +31,10 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
     _songServer = context.read<SongServer>();
     _songStorage = context.read<SongStorageService>();
     _audioPlayer = context.read<AudioPlaybackService>();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadSongsFromStorage();
+    });
   }
 
   Future<void> _startDownloadingSong() async {
@@ -57,37 +61,44 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
 
       print("running loop");
     }
+
+    await _loadSongsFromStorage();
+  }
+
+  Future<void> _loadSongsFromStorage() async {
+    var files = await _songStorage.listLocalSongs();
+    setState(() {
+      _loadedSongFiles = files;
+    });
+
+    if (_loadedSongFiles.isEmpty) return;
+
+    _audioPlayer.setSongs(_loadedSongFiles);
+
+    _audioPlayer.subscribeToIndexUpdates((index) {
+      if (index == null || index >= _loadedSongFiles.length) {
+        setState(() {
+          _isPlaying = false;
+        });
+        return;
+      }
+
+      setState(() {
+        _currentSongIndex = index;
+      });
+    });
   }
 
   Future<void> _togglePlayStop() async {
-    if (_loadedSongFiles.isEmpty) {
-      var files = await _songStorage.listLocalSongs();
-      setState(() {
-        _loadedSongFiles = files;
-      });
-
-      if (_loadedSongFiles.isEmpty) return;
-    }
-
     if (_isPlaying) {
       _audioPlayer.pause();
+
       setState(() {
         _isPlaying = false;
       });
     } else {
-      _audioPlayer.playMultipleSongs(_loadedSongFiles);
-      _audioPlayer.subscribeToIndexUpdates((index) {
-        if (index == null || index >= _loadedSongFiles.length) {
-          setState(() {
-            _isPlaying = false;
-          });
-          return;
-        }
+      _audioPlayer.play();
 
-        setState(() {
-          _currentSongIndex = index;
-        });
-      });
       setState(() {
         _isPlaying = true;
       });
@@ -110,7 +121,7 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
   }
 
   void _seekSongAtIndex(int index) {
-    _audioPlayer.playSongAtIndex(index);
+    _audioPlayer.seekSong(index);
   }
 
   void _toggleOneSongLoop() {
@@ -133,10 +144,10 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
           itemCount: _loadedSongFiles.length,
           itemBuilder: (context, index) {
             return ListTile(
-              title: Text(
-                _getLoadedSongName(index)
-              ),
-              tileColor: _isPlaying && _currentSongIndex == index ? Color.fromRGBO(20, 20, 120, 0.1) : null,
+              title: Text(_getLoadedSongName(index)),
+              tileColor: _isPlaying && _currentSongIndex == index
+                  ? Color.fromRGBO(20, 20, 120, 0.1)
+                  : null,
               onTap: () => _seekSongAtIndex(index),
             );
           },
