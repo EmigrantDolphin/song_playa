@@ -10,6 +10,7 @@ class MusicControlsBar extends StatelessWidget {
   final String currentSongName;
   final int songsToDownload;
   final VoidCallback onStartDownloadingSong;
+  final VoidCallback onGoToPlaylist;
 
   const MusicControlsBar({
     super.key,
@@ -22,6 +23,7 @@ class MusicControlsBar extends StatelessWidget {
     required this.currentSongName,
     required this.songsToDownload,
     required this.onStartDownloadingSong,
+    required this.onGoToPlaylist
   });
 
   @override
@@ -29,6 +31,7 @@ class MusicControlsBar extends StatelessWidget {
     return Container(
       height: 230,
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      color: Color.fromRGBO(255, 235, 255, 1),
       child: Column(
         children: [
           Padding(
@@ -93,6 +96,11 @@ class MusicControlsBar extends StatelessWidget {
                       ),
                 onPressed: onToggleOneSongLoop,
               ),
+              IconButton(
+                iconSize: 24,
+                icon: const Icon(Icons.list_alt),
+                onPressed: onGoToPlaylist,
+              )
             ],
           ),
         ],

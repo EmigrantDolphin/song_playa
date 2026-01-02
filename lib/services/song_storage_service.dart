@@ -1,12 +1,17 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:song_playa/api/api_client.dart';
+import 'package:song_playa/api/models/playlist.dart';
+import 'package:song_playa/api/song_server.dart';
 
 class SongStorageService {
   final String _songsDirectory = 'downloaded_songs';
   final ApiClient _apiClient;
+  final SongServer _songServer;
 
-  SongStorageService({required ApiClient apiClient}) : _apiClient = apiClient;
+  SongStorageService({required ApiClient apiClient, required SongServer songServer}) : _apiClient = apiClient, _songServer = songServer;
 
   Future<String> _getLocalPath() async {
     final directory = await getApplicationDocumentsDirectory();
@@ -27,13 +32,46 @@ class SongStorageService {
       final localPath = await _getLocalPath();
       final filePath = '$localPath/$fileName';
 
-      await _apiClient.dio.download("download/song/$fileName", filePath, onReceiveProgress: onReceiveProgress);
+      await _apiClient.dio.download("download/song/$fileName", filePath, onReceiveProgress: onReceiveProgress); //TODO: move to SongServer class.
 
       return filePath;
     } catch (e) {
       print('Error downloading a song: $e');
       return null;
     }
+  }
+
+  Future<void> syncPlaylists() async {
+    var playlists = await _songServer.getPlaylists(); //TODO: call manually since api is hosted on private network. Sync together with song files.
+    if (playlists.isEmpty) return;
+
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final List<Map<String, dynamic>> jsonList = playlists
+      .map((playlist) => playlist.toJson())
+      .toList();
+
+    final json = jsonEncode(jsonList);
+
+    await prefs.setString("playlists", json);
+  }
+
+  Future<List<Playlist>> getPlaylists() async {
+    final SharedPreferences prefs = await SharedPreferences.getInstance();
+    final String? json = prefs.getString("playlists");
+
+    if (json == null) return [];
+
+    final List<dynamic> decoded = jsonDecode(json);
+
+    List<Playlist> playlists = [Playlist.getAllPlaylist()];
+
+    var storedPlaylists = decoded
+      .map((item) => Playlist.fromJson(item))
+      .toList();
+
+    playlists.addAll(storedPlaylists);
+
+    return playlists;
   }
 
   Future<List<File>> listLocalSongs() async {

@@ -1,14 +1,17 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:song_playa/api/models/playlist.dart';
+import 'package:song_playa/screens/playlists_screen.dart';
 import 'package:song_playa/screens/widgets/music_controls_bar.dart';
 import 'package:song_playa/services/audio_playback_service.dart';
-import 'package:song_playa/services/song_server.dart';
+import 'package:song_playa/api/song_server.dart';
 import 'package:song_playa/services/song_storage_service.dart';
 import 'package:path/path.dart' as p;
 
 class MusicPlayerScreen extends StatefulWidget {
-  const MusicPlayerScreen({super.key});
+  final Playlist playlist;
+  const MusicPlayerScreen({super.key, required this.playlist});
 
   @override
   State<MusicPlayerScreen> createState() => _MusicPlayerScreenState();
@@ -23,7 +26,7 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
   var _loadedSongFiles = <File>[];
   var _currentSongIndex = 0;
 
-  var _songsToDownload = <String>[];
+  var _songsToDownload = <Song>[];
 
   @override
   void initState() {
@@ -35,6 +38,15 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadSongsFromStorage();
     });
+  }
+
+  void _goToPlaylists() {
+    _audioPlayer.stop();
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context);
+    } else {
+      Navigator.push(context, MaterialPageRoute(builder: (context) => const PlaylistsScreen()));
+    }
   }
 
   Future<void> _startDownloadingSong() async {
@@ -52,8 +64,8 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
     });
 
     while (_songsToDownload.isNotEmpty) {
-      var songName = _songsToDownload.last;
-      await _songStorage.downloadSong(fileName: songName);
+      var song = _songsToDownload.last;
+      await _songStorage.downloadSong(fileName: song.name);
 
       setState(() {
         _songsToDownload.removeLast();
@@ -67,6 +79,16 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
 
   Future<void> _loadSongsFromStorage() async {
     var files = await _songStorage.listLocalSongs();
+
+    if (!widget.playlist.isAllPlaylist()) {
+      files = files
+        .where((file) => widget.playlist.songs
+          .map((song) => song.name)
+          .toList()
+          .contains(p.basenameWithoutExtension(file.path)))
+        .toList();
+    }
+
     setState(() {
       _loadedSongFiles = files;
     });
@@ -163,6 +185,7 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
         currentSongName: _getLoadedSongName(_currentSongIndex),
         songsToDownload: _songsToDownload.length,
         onStartDownloadingSong: _startDownloadingSong,
+        onGoToPlaylist: _goToPlaylists,
       ),
     );
   }
