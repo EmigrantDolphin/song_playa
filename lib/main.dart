@@ -4,8 +4,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:song_playa/api/models/playlist.dart';
 import 'package:song_playa/app_config.dart';
 import 'package:song_playa/api/api_client.dart';
+import 'package:song_playa/screens/player_screen_view_model.dart';
 import 'package:song_playa/screens/playlists_screen.dart';
 import 'package:song_playa/screens/player_screen.dart';
+import 'package:song_playa/screens/playlists_screen_view_model.dart';
 import 'package:song_playa/services/audio_playback_service.dart';
 import 'package:song_playa/api/song_server.dart';
 import 'package:song_playa/services/song_storage_service.dart';
@@ -27,11 +29,43 @@ Future<void> main() async {
           update: (_, apiClient, _) => SongServer(apiClient: apiClient),
         ),
         ProxyProvider<SongServer, SongStorageService>(
-          update: (_, songServer, _) => SongStorageService(songServer: songServer),
+          update: (_, songServer, _) =>
+              SongStorageService(songServer: songServer),
         ),
         Provider<AudioPlaybackService>(
           create: (_) => AudioPlaybackService(),
           dispose: (_, service) => service.dispose(),
+        ),
+        ChangeNotifierProxyProvider3<
+          SongServer,
+          SongStorageService,
+          AudioPlaybackService,
+          PlayerScreenViewModel
+        >(
+          create: (context) => PlayerScreenViewModel(
+            songServer: context.read<SongServer>(),
+            songStorage: context.read<SongStorageService>(),
+            audioPlayback: context.read<AudioPlaybackService>(),
+          ),
+          update:
+              (context, songServer, songStorage, audioPlayback, previousModel) {
+                return previousModel ??
+                    PlayerScreenViewModel(
+                      songServer: songServer,
+                      songStorage: songStorage,
+                      audioPlayback: audioPlayback,
+                    );
+              },
+        ),
+        ChangeNotifierProxyProvider<
+          SongStorageService,
+          PlaylistsScreenViewModel
+        >(
+          create: (context) => PlaylistsScreenViewModel(
+            songStorage: context.read<SongStorageService>(),
+          ),
+          update: (context, songStorage, previous) =>
+              previous ?? PlaylistsScreenViewModel(songStorage: songStorage),
         ),
       ],
       child: const MyApp(),
@@ -52,11 +86,10 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       // home: const MusicPlayerScreen(),
-      home: const RootHandler()
+      home: const RootHandler(),
     );
   }
 }
-
 
 class RootHandler extends StatelessWidget {
   const RootHandler({super.key});
@@ -80,7 +113,9 @@ class RootHandler extends StatelessWidget {
       future: _lastLoadedPlaylistId(songStorageService),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(body: Center(child: CircularProgressIndicator()));
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
 
         final lastPlaylist = snapshot.data;

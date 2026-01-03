@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:song_playa/api/models/playlist.dart';
 import 'package:song_playa/screens/player_screen.dart';
-import 'package:song_playa/services/song_storage_service.dart';
+import 'package:song_playa/screens/playlists_screen_view_model.dart';
 
 class PlaylistsScreen extends StatefulWidget {
   const PlaylistsScreen({super.key});
@@ -13,34 +12,21 @@ class PlaylistsScreen extends StatefulWidget {
 }
 
 class _PlaylistsScreenState extends State<PlaylistsScreen> {
-  late final SongStorageService _songStorage;
-  List<Playlist> _playlists = [];
-
   @override
   void initState() {
     super.initState();
-    _songStorage = context.read<SongStorageService>();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadPlaylists();
+      context.read<PlaylistsScreenViewModel>().loadPlaylists();
     });
   }
 
-  Future<void> _loadPlaylists() async {
-    final playlists = await _songStorage.getPlaylists();
+  Future<void> onPlaylistSelect(BuildContext context, Playlist playlist) async {
+    final vm = context.read<PlaylistsScreenViewModel>();
 
+    await vm.saveLastLoadedPlaylistId(playlist);
 
-    setState(() {
-      _playlists = playlists;
-    });
-  }
-
-  Future<void> _onPlaylistSelect(Playlist playlist) async {
-    var pref = await SharedPreferences.getInstance();
-    pref.setInt("last_loaded_playlist_id", playlist.id);
-
-    if (!mounted) return;
-
+    if (!context.mounted) return;
     await Navigator.push(
       context,
       MaterialPageRoute(
@@ -48,25 +34,30 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
       ),
     );
 
-    pref.remove("last_loaded_playlist_id");
+    await vm.removeLastLoadedPlaylistId();
   }
 
   @override
   Widget build(BuildContext context) {
+    final vm = context.watch<PlaylistsScreenViewModel>();
+
     return Scaffold(
       body: Center(
-        child: _playlists.isEmpty
+        child: vm.playlists.isEmpty
             ? Center(child: Text("No playlists found"))
             : ListView.builder(
-                itemCount: _playlists.length,
+                itemCount: vm.playlists.length,
                 itemBuilder: (context, index) {
+                  final playlist = vm.playlists[index];
                   return ListTile(
-                    title: Text(_playlists[index].name),
-                    onTap: () => _onPlaylistSelect(_playlists[index]),
+                    title: Text(playlist.name),
+                    onTap: () => onPlaylistSelect(context, playlist)
                   );
                 },
               ),
       ),
     );
   }
+
+
 }

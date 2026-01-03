@@ -28,7 +28,7 @@ class AudioPlaybackService {
 
   void play() => _player.play();
   void pause() => _player.pause();
-  void stop() => _player.stop();
+  Future<void> stop() async => await _player.stop();
   void next() => _player.seekToNext();
   void previous() => _player.seekToPrevious();
   void loopOneSong() => _player.setLoopMode(LoopMode.one);
