@@ -26,8 +26,8 @@ Future<void> main() async {
         ProxyProvider<ApiClient, SongServer>(
           update: (_, apiClient, _) => SongServer(apiClient: apiClient),
         ),
-        ProxyProvider2<ApiClient, SongServer, SongStorageService>(
-          update: (_, apiClient, songServer, _) => SongStorageService(apiClient: apiClient, songServer: songServer),
+        ProxyProvider<SongServer, SongStorageService>(
+          update: (_, songServer, _) => SongStorageService(songServer: songServer),
         ),
         Provider<AudioPlaybackService>(
           create: (_) => AudioPlaybackService(),

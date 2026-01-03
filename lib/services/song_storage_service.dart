@@ -2,16 +2,14 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:song_playa/api/api_client.dart';
 import 'package:song_playa/api/models/playlist.dart';
 import 'package:song_playa/api/song_server.dart';
 
 class SongStorageService {
   final String _songsDirectory = 'downloaded_songs';
-  final ApiClient _apiClient;
   final SongServer _songServer;
 
-  SongStorageService({required ApiClient apiClient, required SongServer songServer}) : _apiClient = apiClient, _songServer = songServer;
+  SongStorageService({required SongServer songServer}) : _songServer = songServer;
 
   Future<String> _getLocalPath() async {
     final directory = await getApplicationDocumentsDirectory();
@@ -26,13 +24,12 @@ class SongStorageService {
 
   Future<String?> downloadSong({
     required String fileName,
-    Function(int received, int total)? onReceiveProgress,
   }) async {
     try {
       final localPath = await _getLocalPath();
       final filePath = '$localPath/$fileName';
 
-      await _apiClient.dio.download("download/song/$fileName", filePath, onReceiveProgress: onReceiveProgress); //TODO: move to SongServer class.
+      await _songServer.downloadSong(fileName, filePath);
 
       return filePath;
     } catch (e) {
@@ -42,7 +39,7 @@ class SongStorageService {
   }
 
   Future<void> syncPlaylists() async {
-    var playlists = await _songServer.getPlaylists(); //TODO: call manually since api is hosted on private network. Sync together with song files.
+    var playlists = await _songServer.getPlaylists();
     if (playlists.isEmpty) return;
 
     final SharedPreferences prefs = await SharedPreferences.getInstance();

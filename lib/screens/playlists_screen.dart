@@ -27,7 +27,6 @@ class _PlaylistsScreenState extends State<PlaylistsScreen> {
   }
 
   Future<void> _loadPlaylists() async {
-    await _songStorage.syncPlaylists();
     final playlists = await _songStorage.getPlaylists();
 
 

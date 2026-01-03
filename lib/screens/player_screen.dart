@@ -74,6 +74,7 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> {
       print("running loop");
     }
 
+    await _songStorage.syncPlaylists();
     await _loadSongsFromStorage();
   }
 
